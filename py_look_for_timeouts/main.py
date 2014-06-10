@@ -94,6 +94,17 @@ class Checker(ast.NodeVisitor):
             return True
         return False
 
+    @staticmethod
+    def _is_requests_call(function_name):
+        if function_name in (
+            'requests.get',
+            'requests.post',
+            'requests.put',
+            'requests.head'
+        ):
+            return True
+        return False
+
     def _check_timeout_call(self, node, arg_offset, kwarg_name, desc):
         if arg_offset is not None and len(node.args) > arg_offset:
             if _intify(node.args[arg_offset]) == 0:
@@ -112,7 +123,7 @@ class Checker(ast.NodeVisitor):
                 ))
         else:
             self.errors.append(IllegalLine(
-                '%s call without a timeout arg or kwarg' % desc,
+                '%s without a timeout arg or kwarg' % desc,
                 node,
                 self.filename
             ))
@@ -124,7 +135,7 @@ class Checker(ast.NodeVisitor):
                 node,
                 arg_offset=2,
                 kwarg_name='timeout',
-                desc='urlopen'
+                desc='urlopen call'
             )
         elif self._is_httplib_call(function_name):
             self._check_timeout_call(
@@ -139,6 +150,13 @@ class Checker(ast.NodeVisitor):
                 arg_offset=5,
                 kwarg_name='timeout',
                 desc='twilio rest connection'
+            )
+        elif self._is_requests_call(function_name):
+            self._check_timeout_call(
+                node,
+                arg_offset=None,
+                kwarg_name='timeout',
+                desc='requests call'
             )
 
 
