@@ -100,7 +100,8 @@ class Checker(ast.NodeVisitor):
             'requests.get',
             'requests.post',
             'requests.put',
-            'requests.head'
+            'requests.head',
+            'requests.request',
         ):
             return True
         return False

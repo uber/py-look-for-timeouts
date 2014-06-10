@@ -48,4 +48,4 @@ class TestSimple(TestCase):
 
     def test_bad_requests_call(self):
         errors = check(join(SAMPLE_PATH, 'bad_requests.py'))
-        self.assertEqual(len(errors), 4)
+        self.assertEqual(len(errors), 5)
