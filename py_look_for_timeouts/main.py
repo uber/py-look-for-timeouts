@@ -106,6 +106,15 @@ class Checker(ast.NodeVisitor):
             return True
         return False
 
+    @staticmethod
+    def _is_clay_call(function_name):
+        if '.' in function_name:
+            if function_name.endswith('http.request'):
+                return True
+        elif function_name == 'request':
+            return True
+        return False
+
     def _check_timeout_call(self, node, arg_offset, kwarg_name, desc):
         if arg_offset is not None and len(node.args) > arg_offset:
             if _intify(node.args[arg_offset]) == 0:
@@ -158,6 +167,13 @@ class Checker(ast.NodeVisitor):
                 arg_offset=None,
                 kwarg_name='timeout',
                 desc='requests call'
+            )
+        elif self._is_clay_call(function_name):
+            self._check_timeout_call(
+                node,
+                arg_offset=4,
+                kwarg_name='timeout',
+                desc='http call'
             )
 
 

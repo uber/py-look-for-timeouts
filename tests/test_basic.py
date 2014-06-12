@@ -49,3 +49,13 @@ class TestSimple(TestCase):
     def test_bad_requests_call(self):
         errors = check(join(SAMPLE_PATH, 'bad_requests.py'))
         self.assertEqual(len(errors), 5)
+
+    def test_bad_clay_requests(self):
+        errors = check(join(SAMPLE_PATH, 'bad_clay_requests.py'))
+        self.assertEqual(len(errors), 6)
+        self.assertEqual(errors[0].reason, 'http call with a timeout arg of 0')
+        self.assertEqual(errors[1].reason, 'http call without a timeout arg or kwarg')
+        self.assertEqual(errors[2].reason, 'http call with a timeout kwarg of 0')
+        self.assertEqual(errors[3].reason, 'http call with a timeout arg of 0')
+        self.assertEqual(errors[4].reason, 'http call without a timeout arg or kwarg')
+        self.assertEqual(errors[5].reason, 'http call with a timeout kwarg of 0')
