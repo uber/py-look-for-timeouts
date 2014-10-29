@@ -32,7 +32,7 @@ tests_require, _ = get_install_requirements('requirements-tests.txt')
 
 setup(
     name="py-look-for-timeouts",
-    version="0.1",
+    version="0.2",
     author="James Brown",
     author_email="jbrown@uber.com",
     url="https://github.com/uber/py-look-for-timeouts",
