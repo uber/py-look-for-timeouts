@@ -1,7 +1,7 @@
 from os.path import join, realpath, dirname
 from unittest import TestCase
 
-from py_look_for_timeouts.main import check
+from py_look_for_timeouts.main import check, Checker
 
 
 SAMPLE_PATH = realpath(join(dirname(__file__), 'samples'))
@@ -49,3 +49,12 @@ class TestSimple(TestCase):
     def test_bad_requests_call(self):
         errors = check(join(SAMPLE_PATH, 'bad_requests.py'))
         self.assertEqual(len(errors), 5)
+
+    def test_hardcoded_timeout(self):
+        """Verify that hardcoded timeouts are identified."""
+        checker = Checker(allow_hardcoded=False)
+        errors = check(join(SAMPLE_PATH, 'bad_hardcoded.py'), checker=checker)
+        self.assertEqual(len(errors), 1)
+        error = errors[0]
+        self.assertEqual(error.lineno, 3)
+        self.assertEqual(error.reason, 'urlopen call with an hardcoded timeout arg of 2')

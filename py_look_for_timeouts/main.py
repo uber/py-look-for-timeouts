@@ -56,11 +56,12 @@ def _stringify(node):
         return ast.dump(node)
 
 
-class Checker(ast.NodeVisitor):
-    def __init__(self, filename, *args, **kwargs):
+class Visitor(ast.NodeVisitor):
+    def __init__(self, filename, checker, *args, **kwargs):
         self.filename = filename
+        self.checker = checker
         self.errors = []
-        super(Checker, self).__init__(*args, **kwargs)
+        super(Visitor, self).__init__(*args, **kwargs)
 
     @staticmethod
     def _is_urlopen_call(function_name):
@@ -107,27 +108,19 @@ class Checker(ast.NodeVisitor):
         return False
 
     def _check_timeout_call(self, node, arg_offset, kwarg_name, desc):
+        # Grab the timeout node inside the function call
+        timeout = None
+        is_kwarg = False
         if arg_offset is not None and len(node.args) > arg_offset:
-            if _intify(node.args[arg_offset]) == 0:
-                self.errors.append(IllegalLine(
-                    '%s with a timeout arg of 0' % desc,
-                    node,
-                    self.filename
-                ))
+            timeout = node.args[arg_offset]
         elif node.keywords:
             keywords = [k for k in node.keywords if k.arg == kwarg_name]
-            if keywords and _intify(keywords[0].value) == 0:
-                self.errors.append(IllegalLine(
-                    '%s with a timeout kwarg of 0' % desc,
-                    node,
-                    self.filename
-                ))
-        else:
-            self.errors.append(IllegalLine(
-                '%s without a timeout arg or kwarg' % desc,
-                node,
-                self.filename
-            ))
+            if keywords:
+                is_kwarg = True
+                timeout = keywords[0].value
+        errors = self.checker(timeout, desc, node, self.filename, is_kwarg)
+        if errors:
+            self.errors.extend(errors)
 
     def visit_Call(self, node):
         function_name = _stringify(node.func)
@@ -161,15 +154,48 @@ class Checker(ast.NodeVisitor):
             )
 
 
-def check(filename):
-    c = Checker(filename=filename)
+class Checker(object):
+
+    def __init__(self, allow_hardcoded=True):
+        self.allow_hardcoded = allow_hardcoded
+
+    def __call__(self, timeout_node, desc, node, filename, is_kwarg):
+        """Return a list of IllegalLine on misconfigured timeout.
+
+        :param timeout_node:
+        :param desc:
+        :param node:
+        :param str filename:
+        """
+        msg = None
+        if not timeout_node:
+            msg = '%s without a timeout arg or kwarg' % desc
+            return [IllegalLine(msg, node, filename)]
+
+        value = _intify(timeout_node)
+        if value == 0:
+            msg = '%s with a timeout %sarg of 0' % (
+                desc, 'kw' if is_kwarg else '')
+        elif isinstance(value, int) and not self.allow_hardcoded:
+            msg = '%s with an hardcoded timeout arg of %d' % (desc, value)
+
+        if msg:
+            return [IllegalLine(msg, node, filename)]
+
+
+def check(filename, checker=None):
+    """Check a file for missing/misconfigure timeouts."""
+    if not checker:
+        checker = Checker()
+
+    v = Visitor(filename, checker=checker)
     with open(filename, 'r') as fobj:
         try:
             parsed = ast.parse(fobj.read(), filename)
-            c.visit(parsed)
+            v.visit(parsed)
         except Exception:  # noqa
             raise  # noqa
-    return c.errors
+    return v.errors
 
 
 def main():
@@ -183,12 +209,18 @@ def main():
         action='version',
         version='%(prog)s ' + __version__
     )
+    parser.add_argument(
+        '--no-hardcoded',
+        action='store_true',
+        help="Do not allow hardcoded constant"
+    )
     parser.add_argument('files', nargs='+', help='Files to check')
     args = parser.parse_args()
 
     errors = []
+    checker = Checker(allow_hardcoded=not args.no_hardcoded)
     for fname in args.files:
-        these_errors = check(fname)
+        these_errors = check(fname, checker=checker)
         if these_errors:
             print '\n'.join(str(e) for e in these_errors)
             errors.extend(these_errors)
