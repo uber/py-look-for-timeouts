@@ -2,6 +2,7 @@ import collections
 
 from setuptools import setup, find_packages
 from pip.req import parse_requirements
+from pip.download import PipSession
 
 with open('README.md', 'r') as readme_fd:
     LONG_DESCRIPTION = readme_fd.read()
@@ -11,15 +12,17 @@ def get_install_requirements(fname):
 
     ReqOpts = collections.namedtuple('ReqOpts', [
         'skip_requirements_regex',
-        'default_vcs'
+        'default_vcs',
+        'isolated_mode'
     ])
 
-    opts = ReqOpts(None, 'git')
+    opts = ReqOpts(None, 'git', False)
+    session = PipSession()
 
     requires = []
     dependency_links = []
 
-    for ir in parse_requirements(fname, options=opts):
+    for ir in parse_requirements(fname, options=opts, session=session):
         if ir is not None:
             if ir.url is not None:
                 dependency_links.append(str(ir.url))
