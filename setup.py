@@ -1,8 +1,9 @@
 import collections
 
+from distutils.version import StrictVersion
 from setuptools import setup, find_packages
 from pip.req import parse_requirements
-from pip.download import PipSession
+import pip
 
 with open('README.md', 'r') as readme_fd:
     LONG_DESCRIPTION = readme_fd.read()
@@ -13,16 +14,23 @@ def get_install_requirements(fname):
     ReqOpts = collections.namedtuple('ReqOpts', [
         'skip_requirements_regex',
         'default_vcs',
-        'isolated_mode'
+        'isolated_mode',
     ])
 
     opts = ReqOpts(None, 'git', False)
-    session = PipSession()
+    params = {'options': opts}
 
     requires = []
     dependency_links = []
 
-    for ir in parse_requirements(fname, options=opts, session=session):
+    pip_version = StrictVersion(pip.__version__)
+    session_support_since = StrictVersion('1.5.0')
+    if pip_version >= session_support_since:
+        from pip.download import PipSession
+        session = PipSession()
+        params.update({'session':session})
+
+for ir in parse_requirements(fname, **params):
         if ir is not None:
             if ir.url is not None:
                 dependency_links.append(str(ir.url))
