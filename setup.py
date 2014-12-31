@@ -28,15 +28,15 @@ def get_install_requirements(fname):
     if pip_version >= session_support_since:
         from pip.download import PipSession
         session = PipSession()
-        params.update({'session':session})
+        params.update({'session': session})
 
-for ir in parse_requirements(fname, **params):
+    for ir in parse_requirements(fname, **params):
         if ir is not None:
             if ir.url is not None:
                 dependency_links.append(str(ir.url))
             if ir.req is not None:
                 requires.append(str(ir.req))
-    return requires, dependency_links
+        return requires, dependency_links
 
 
 tests_require, _ = get_install_requirements('requirements-tests.txt')
