@@ -3,4 +3,6 @@ python:
     - "2.7"
 install:
     - "pip install -r requirements-tests.txt"
-script: "nosetests -s -v --with-cover --cover-package=py_look_for_timeouts tests"
+script:
+    - "flake8 setup.py py_look_for_timeouts tests"
+    - "nosetests -s -v --with-cover --cover-package=py_look_for_timeouts tests"
