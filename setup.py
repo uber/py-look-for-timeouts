@@ -21,7 +21,6 @@ def get_install_requirements(fname):
     params = {'options': opts}
 
     requires = []
-    dependency_links = []
 
     pip_version = StrictVersion(pip.__version__)
     session_support_since = StrictVersion('1.5.0')
@@ -31,19 +30,16 @@ def get_install_requirements(fname):
         params.update({'session': session})
 
     for ir in parse_requirements(fname, **params):
-        if ir is not None:
-            if ir.url is not None:
-                dependency_links.append(str(ir.url))
-            if ir.req is not None:
-                requires.append(str(ir.req))
-        return requires, dependency_links
+        if ir is not None and ir.req is not None:
+            requires.append(str(ir.req))
+        return requires
 
 
-tests_require, _ = get_install_requirements('requirements-tests.txt')
+tests_require = get_install_requirements('requirements-tests.txt')
 
 setup(
     name="py-look-for-timeouts",
-    version="0.3",
+    version="0.4",
     author="James Brown",
     author_email="jbrown@uber.com",
     url="https://github.com/uber/py-look-for-timeouts",
@@ -55,7 +51,7 @@ setup(
         "Topic :: Security",
         "Topic :: Security",
         "Intended Audience :: Developers",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Alpha",
         "Programming Language :: Python :: 2.7",
         "License :: OSI Approved :: MIT License",
     ],
